@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification System</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: url('/mnt/data/3a537aeb-be2e-4458-a01a-92f22cf79d8c.webp');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center center;
+            color: #343a40;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #007bff;
+            font-size: 26px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            font-weight: 600;
+            color: #495057;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"],
+        input[type="email"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            color: #495057;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus {
+            border-color: #007bff;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #ffffff;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #6c757d;
+        }
+
+        #responseMessage {
+            font-size: 16px;
+            font-weight: 500;
+            margin-top: 15px;
+        }
+
+        .loading {
+            font-size: 14px;
+            font-style: italic;
+            color: #6c757d;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>OTP Verification System</h1>
+
+        <form id="otpForm">
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" placeholder="Enter your name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+            </div>
+            <button type="submit">Send OTP</button>
+            <div class="loading" id="sendingOtpMessage" style="display:none;">Sending OTP...</div>
+        </form>
+
+        <form id="verifyForm" style="display: none;">
+            <div class="form-group">
+                <label for="otp">Enter OTP:</label>
+                <input type="text" id="otp" name="otp" placeholder="Enter OTP" required>
+            </div>
+            <button type="submit">Verify OTP</button>
+            <div class="loading" id="verifyingOtpMessage" style="display:none;">Verifying OTP...</div>
+        </form>
+
+        <p id="responseMessage"></p>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            // Handle OTP sending
+            $('#otpForm').on('submit', function (event) {
+                event.preventDefault();
+                const name = $('#name').val();
+                const email = $('#email').val();
+                
+                $(this).find('button').attr('disabled', true);
+                $('#sendingOtpMessage').show();
+
+                $.ajax({
+                    url: '/send_otp',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ name: name, email: email }),
+                    success: function (response) {
+                        $('#responseMessage').text(response.message).css('color', '#28a745');
+                        $('#verifyForm').fadeIn();
+                    },
+                    error: function (error) {
+                        $('#responseMessage').text('Failed to send OTP: ' + error.responseJSON.message).css('color', '#dc3545');
+                    },
+                    complete: function () {
+                        $('#otpForm').find('button').attr('disabled', false);
+                        $('#sendingOtpMessage').hide();
+                    }
+                });
+            });
+
+            // Handle OTP verification
+            $('#verifyForm').on('submit', function (event) {
+                event.preventDefault();
+                const email = $('#email').val();
+                const otp = $('#otp').val();
+
+                $('#verifyingOtpMessage').show();
+
+                $.ajax({
+                    url: '/verify_otp',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ email: email, otp: otp }),
+                    success: function (response) {
+                        $('#responseMessage').text(response.message).css('color', '#28a745');
+                        $('#otpForm, #verifyForm').trigger('reset');
+                        $('#verifyForm').fadeOut();
+                    },
+                    error: function (error) {
+                        $('#responseMessage').text('Failed to verify OTP: ' + error.responseJSON.message).css('color', '#dc3545');
+                    },
+                    complete: function () {
+                        $('#verifyingOtpMessage').hide();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
